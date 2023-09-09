@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <linux/if_ether.h>
 
 #define PACKET_BUFFER_SIZE 65536
 
@@ -20,7 +21,7 @@ int main() {
     unsigned char packet_buffer[PACKET_BUFFER_SIZE];
 
     // Create a raw socket to capture all packets
-    raw_socket = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
+    raw_socket = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
     if (raw_socket == -1) {
         perror("Socket creation error");
         exit(1);
