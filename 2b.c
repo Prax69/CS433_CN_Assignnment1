@@ -6,7 +6,7 @@
 #include <arpa/inet.h>
 #include <pcap.h>
 
-#define PCAP_FILE "your_pcap_file.pcap"
+#define PCAP_FILE "3.pcap" // path to your pcap file or make sure it is in the same directory as your code
 
 void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u_char *packet);
 
