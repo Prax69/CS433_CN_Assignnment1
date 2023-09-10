@@ -16,7 +16,7 @@ void process_packet(unsigned char *, int);
 
 int main() {
     int raw_socket;
-    struct sockaddr_in server;
+    struct sockaddr server;
     socklen_t server_len = sizeof(server);
     unsigned char packet_buffer[PACKET_BUFFER_SIZE];
 
@@ -29,7 +29,7 @@ int main() {
 
     // Receive packets and print information
     while (1) {
-        int packet_size = recvfrom(raw_socket, packet_buffer, PACKET_BUFFER_SIZE, 0, (struct sockaddr *)&server, &server_len);
+        int packet_size = recvfrom(raw_socket, packet_buffer, PACKET_BUFFER_SIZE, 0, &server, &server_len);
         if (packet_size == -1) {
             perror("Packet receive error");
             close(raw_socket);
@@ -44,15 +44,15 @@ int main() {
 }
 
 void process_packet(unsigned char *packet, int packet_size) {
-    struct ip *ip_header = (struct ip *)(packet);
-    struct tcphdr *tcp_header = (struct tcphdr *)(packet + ip_header->ip_hl * 4);
+    struct iphdr *ip_header = (struct iphdr *)(packet + sizeof(struct ethhdr));
+    struct tcphdr *tcp_header = (struct tcphdr *)(packet + sizeof(struct ethhdr) + sizeof(struct iphdr));
 
     char src_ip[INET_ADDRSTRLEN];
     char dest_ip[INET_ADDRSTRLEN];
 
     // Convert source and destination IP addresses to human-readable format
-    inet_ntop(AF_INET, &(ip_header->ip_src), src_ip, INET_ADDRSTRLEN);
-    inet_ntop(AF_INET, &(ip_header->ip_dst), dest_ip, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &(ip_header->saddr), src_ip, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &(ip_header->daddr), dest_ip, INET_ADDRSTRLEN);
 
     // Print source and destination IP addresses and ports
     printf("Source IP: %s\n", src_ip);
