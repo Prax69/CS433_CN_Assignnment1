@@ -5,13 +5,15 @@ THIS README FILE CONTAINS INFORMATION TO RUN THE CODES FOR PART 1, PART 2 AND PA
 /*
 
 PART 1: <br />
-    gcc raw_socket.c -lpcap -o lsniffer   // ---> To compile the raw_socket.c and generate an executable file named lsniffer  <br />
-    sudo ./lsniffer                       // ---> Execute lsniffer <br />
+    gcc raw_socket.c -o lsniffer              // ---> To compile the raw_socket.c and generate an executable file named lsniffer  <br />
+    sudo ./lsniffer                           // ---> Execute lsniffer <br />
+    sudo tcpreplay --mbps 1 -v -i eth0 0.pcap // ---> Run tcpreplay to run packets <br />
 
 PART 2: <br />
-    gcc -o <name-your-executable> <name-of-your-C-program> -lpcap     // ---> To compile your .c file  <br />
+    gcc <name-of-your-C-program> -o <name-your-executable>            // ---> To compile your .c file  <br />
     sudo ./ <executable-file>                                         // ---> Execute the compiled file  <br />
-    Do the same for all the files                                <br />
+    sudo tcpreplay --mbps 1 -v -i eth0 0.pcap // ---> Run tcpreplay to run packets <br />
+    Do the same for all sub-parts of Part 2 (twice for d subpart)     <br />
     
     
 PART 3: <br />
