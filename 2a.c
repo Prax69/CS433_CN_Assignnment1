@@ -1,50 +1,64 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
-#include <pcap.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <linux/if_ether.h>
 
-#define PCAP_FILE "3.pcap" // path to your pcap file or make sure it is in the same directory as your code
+#define PACKET_BUFFER_SIZE 65536
 
-void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u_char *packet);
+int process_packet(unsigned char *, int);
 
 int main() {
-    pcap_t *handle;
-    char errbuf[PCAP_ERRBUF_SIZE];
+    int raw_socket;
+    struct sockaddr server;
+    socklen_t server_len = sizeof(server);
+    unsigned char packet_buffer[PACKET_BUFFER_SIZE];
 
-    // Open the pcap file for reading
-    handle = pcap_open_offline(PCAP_FILE, errbuf);
-    if (handle == NULL) {
-        fprintf(stderr, "Error opening pcap file: %s\n", errbuf);
-        return 1;
+    // Create a raw socket to capture all packets
+    raw_socket = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    if (raw_socket == -1) {
+        perror("Socket creation error");
+        exit(1);
     }
 
-    // Read and process packets
-    pcap_loop(handle, 0, (pcap_handler)process_packet, NULL);
+    // Receive packets and print information
+    while (1) {
+        int packet_size = recvfrom(raw_socket, packet_buffer, PACKET_BUFFER_SIZE, 0, &server, &server_len);
+        if (packet_size == -1) {
+            perror("Packet receive error");
+            close(raw_socket);
+            exit(1);
+        }
+	
+        if (process_packet(packet_buffer, packet_size)) break;
+    }
 
-    // Close the pcap file
-    pcap_close(handle);
-
+    close(raw_socket);
     return 0;
 }
 
-void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u_char *packet) {
-    struct ip *ip_header = (struct ip *)(packet + 14);  // Ethernet header is 14 bytes
-    struct tcphdr *tcp_header = (struct tcphdr *)(packet + 14 + ip_header->ip_hl * 4);  // IP header length varies
+int process_packet(unsigned char *packet, int packet_size) {
+    struct iphdr *ip_header = (struct iphdr *)(packet + sizeof(struct ethhdr));
+    struct tcphdr *tcp_header = (struct tcphdr *)(packet + sizeof(struct ethhdr) + sizeof(struct iphdr));
 
     char src_ip[INET_ADDRSTRLEN];
     char dest_ip[INET_ADDRSTRLEN];
 
     // Convert source and destination IP addresses to human-readable format
-    inet_ntop(AF_INET, &(ip_header->ip_src), src_ip, INET_ADDRSTRLEN);
-    inet_ntop(AF_INET, &(ip_header->ip_dst), dest_ip, INET_ADDRSTRLEN);
-
-    // Search for the keyword "Flag" in the packet payload
-    const char *payload = (const char *)(packet + 14 + ip_header->ip_hl * 4 + tcp_header->th_off * 4);
+    inet_ntop(AF_INET, &(ip_header->saddr), src_ip, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &(ip_header->daddr), dest_ip, INET_ADDRSTRLEN);
     
+    packet[packet_size]='\0';
+    char *payload = packet + sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct tcphdr);
+
     if (strstr(payload, "Flag") != NULL) {
+    	if (strstr(payload,"skip this packet") != NULL) return 0;
         printf("Found 'Flag' keyword in packet payload:\n");
         printf("Source IP: %s\n", src_ip);
         printf("Source Port: %d\n", ntohs(tcp_header->th_sport));
@@ -53,7 +67,7 @@ void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u
         printf("Payload Data:\n");
 
         // Print payload data, assuming it's ASCII text
-        for (int i = 0; i < header->caplen; i++) {
+        for (int i = 0; i < strlen(payload); i++) {
             if (payload[i] >= 32 && payload[i] <= 126) {
                 putchar(payload[i]);
             } else {
@@ -61,5 +75,7 @@ void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u
             }
         }
         printf("\n");
+        return 1;
     }
+    return 0;
 }
