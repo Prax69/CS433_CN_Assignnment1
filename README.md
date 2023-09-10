@@ -17,7 +17,7 @@ PART 2: <br />
     
     
 PART 3: <br />
-
+keep the browser open so it doesn't get stuck. Rest is same as 1 but no need to do tcpreplay instead use some other processes.
 */
 
 ALSO THE REPOSITORY CONTAINS A PDF FILE WHICH HAS REFERENCES FOR WHENEVER WERE USED AND SCREENSHOTS OF OUTPUT FROM OUR END
